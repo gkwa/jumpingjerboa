@@ -1,0 +1,20 @@
+import polars as pl
+
+# Sample data from the provided dataset
+data = [
+    {"amount": 61.25, "amount_units": "GB", "date": "2024-11-10", "overage": 0, "overage_units": "GB", "scraped_at": "2024-11-10T05:56:21.800Z", "total": 400, "total_units": "GB"},
+    {"amount": 214.86, "amount_units": "GB", "date": "2024-11-27", "overage": 0, "overage_units": "GB", "scraped_at": "2024-11-27T16:10:04.133Z", "total": 400, "total_units": "GB"},
+    {"amount": 214.86, "amount_units": "GB", "date": "2024-11-28", "overage": 0, "overage_units": "GB", "scraped_at": "2024-11-28T15:43:12.051Z", "total": 400, "total_units": "GB"},
+    {"amount": 225.36, "amount_units": "GB", "date": "2024-11-28", "overage": 0, "overage_units": "GB", "scraped_at": "2024-11-28T16:04:10.334Z", "total": 400, "total_units": "GB"},
+    {"amount": 229.95, "amount_units": "GB", "date": "2024-11-29", "overage": 0, "overage_units": "GB", "scraped_at": "2024-11-29T16:36:53.640Z", "total": 400, "total_units": "GB"},
+    {"amount": 234.35, "amount_units": "GB", "date": "2024-11-30", "overage": 0, "overage_units": "GB", "scraped_at": "2024-11-30T16:04:13.434Z", "total": 400, "total_units": "GB"},
+    {"amount": 0, "amount_units": "GB", "date": "2024-12-01", "overage": 0, "overage_units": "GB", "scraped_at": "2024-12-01T16:04:13.532Z", "total": 400, "total_units": "GB"},
+    {"amount": 16.77, "amount_units": "GB", "date": "2024-12-02", "overage": 0, "overage_units": "GB", "scraped_at": "2024-12-02T16:04:13.496Z", "total": 400, "total_units": "GB"},
+    {"amount": 23.5, "amount_units": "GB", "date": "2024-12-03", "overage": 0, "overage_units": "GB", "scraped_at": "2024-12-03T16:04:51.238Z", "total": 400, "total_units": "GB"},
+    {"amount": 31.92, "amount_units": "GB", "date": "2024-12-04", "overage": 0, "overage_units": "GB", "scraped_at": "2024-12-04T16:10:46.339Z", "total": 400, "total_units": "GB"},
+    {"amount": 43.94, "amount_units": "GB", "date": "2024-12-05", "overage": 0, "overage_units": "GB", "scraped_at": "2024-12-05T16:04:15.843Z", "total": 400, "total_units": "GB"},
+]
+
+df = pl.DataFrame(data)
+df.write_parquet('/tmp/sample_astound.parquet')
+print("Sample parquet file created at /tmp/sample_astound.parquet")

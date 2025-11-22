@@ -1,0 +1,16 @@
+[project]
+name = "jumpingjerboa"
+version = "0.1.0"
+description = "Internet usage data analysis tool"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "polars>=0.19.0",
+]
+
+[project.scripts]
+jumpingjerboa = "jumpingjerboa.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
