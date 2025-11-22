@@ -8,30 +8,34 @@ Run this after installation to verify everything works:
 
 import sys
 import subprocess
-import pathlib
+
 
 def test_import():
     """Test that the package can be imported"""
     print("Testing import...", end=" ")
     try:
         import jumpingjerboa
+
         print("✓ Package imports successfully")
         return True
     except ImportError as e:
         print(f"✗ Failed to import: {e}")
         return False
 
+
 def test_dependencies():
     """Test that required dependencies are available"""
     print("Testing dependencies...", end=" ")
     try:
         import polars
+
         print("✓ Dependencies available")
         return True
     except ImportError as e:
         print(f"✗ Missing dependency: {e}")
         print("  Run: pip install polars")
         return False
+
 
 def test_cli():
     """Test CLI help command"""
@@ -41,7 +45,7 @@ def test_cli():
             [sys.executable, "-m", "jumpingjerboa.main", "--help"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
         if result.returncode == 0 and "jumpingjerboa" in result.stdout:
             print("✓ CLI working")
@@ -53,18 +57,15 @@ def test_cli():
         print(f"✗ CLI test failed: {e}")
         return False
 
+
 def main():
     print("\n=== jumpingjerboa Installation Test ===\n")
-    
-    tests = [
-        test_import,
-        test_dependencies,
-        test_cli
-    ]
-    
+
+    tests = [test_import, test_dependencies, test_cli]
+
     results = [test() for test in tests]
-    
-    print("\n" + "="*40)
+
+    print("\n" + "=" * 40)
     if all(results):
         print("✓ All tests passed! Installation successful.")
         print("\nNext steps:")
@@ -73,6 +74,7 @@ def main():
     else:
         print("✗ Some tests failed. Please check the errors above.")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
