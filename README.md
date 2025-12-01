@@ -32,6 +32,16 @@ Project 10 days into the future:
 jumpingjerboa diff /path/to/astound.parquet -r 7 -p 10
 ```
 
+Show only last 14 days plus projection:
+```bash
+jumpingjerboa diff /path/to/astound.parquet -r 7 -p 10 --last-days 14
+```
+
+Project with custom overage pricing ($10 per 50 GB block):
+```bash
+jumpingjerboa diff /path/to/astound.parquet -r 7 -p 10 --overage-price 10.00 --overage-gb 50
+```
+
 Save results to a file:
 ```bash
 jumpingjerboa diff /path/to/astound.parquet -o output.csv
@@ -48,8 +58,12 @@ jumpingjerboa summary /path/to/astound.parquet
 
 - **Daily usage calculation** - Converts cumulative data to daily usage amounts
 - **Day of week display** - Shows Mon, Tue, Wed, etc. for each date
+- **Cap display** - Shows the data cap value (e.g., 400 GB) on each row
 - **Rolling averages** - Calculate moving averages over specified windows (e.g., 7-day, 14-day, 30-day)
 - **Usage projection** - Estimate future usage and predict when you'll hit your data cap
+- **Limited display** - Show only recent days while using all data for calculations
+- **Overage cost calculation** - Calculate costs when usage exceeds data cap (rounded up to blocks)
+- **Flexible pricing** - Customize overage pricing (default: $6.50 per 25 GB block)
 - **Month reset handling** - Automatically detects when usage counter goes back to 0
 - **Smart sampling** - Takes the most recent scrape for each day (most accurate)
 - **Statistics** - View daily, monthly, and overall usage patterns
@@ -78,14 +92,57 @@ Projection estimates future usage based on recent patterns:
 1. Takes your most recent rolling average (or overall average if no rolling window specified)
 2. Creates future date records for the specified number of days
 3. For each future day, adds the average to the previous day's total
-4. Checks when/if you'll exceed your data cap
+4. Calculates overage amounts and costs when cap is exceeded
+5. Shows when you'll hit the cap and how much it will cost
 
 Example:
 ```bash
 jumpingjerboa diff data.parquet -r 7 -p 10
 ```
 
-This projects 10 days forward using your 7-day rolling average, and warns you if you're on track to exceed your cap.
+This projects 10 days forward using your 7-day rolling average, warns you if you're on track to exceed your cap, and shows estimated overage costs.
+
+## Limiting Display
+
+Use `--last-days` to focus on recent data:
+```bash
+jumpingjerboa diff data.parquet --last-days 7
+```
+
+This shows only the last 7 days in the output table. Important notes:
+
+- **All data is still used** for statistics and rolling averages
+- Only the display is limited to recent days
+- Projected days are always shown (added after the limited actual days)
+- File exports (via `-o`) contain all data, not just the limited display
+
+This is useful when you have months of data but only want to see recent trends.
+
+## Overage Pricing
+
+The default overage pricing is **$6.50 per 25 GB block**. Overage is charged in **blocks**, rounded **UP** to the nearest block:
+
+- **0.01 to 25.00 GB** over = 1 block = **$6.50**
+- **25.01 to 50.00 GB** over = 2 blocks = **$13.00**
+- **50.01 to 75.00 GB** over = 3 blocks = **$19.50**
+
+If you go even 1 MB over your quota, you pay for a full block.
+
+You can customize the pricing:
+```bash
+# Example: $10 per 50 GB block
+jumpingjerboa diff data.parquet -p 10 --overage-price 10.00 --overage-gb 50
+
+# Example: $5 per 10 GB block
+jumpingjerboa diff data.parquet -p 10 --overage-price 5.00 --overage-gb 10
+```
+
+The tool will:
+- Calculate overage amounts when usage exceeds your data cap
+- Show costs in the daily usage table
+- Display total projected costs in the projection summary
+- Show when you'll hit the cap and the cost at that point
+- Display the number of blocks being charged
 
 ## Subcommands
 
