@@ -24,39 +24,39 @@ jumpingjerboa diff /path/to/astound.parquet --stats
 
 With rolling averages (7-day, 14-day, 30-day):
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -r 7 -r 14 -r 30
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --rolling-avg 14 --rolling-avg 30
 ```
 
 Project 10 days into the future:
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -r 7 -p 10
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --project 10
 ```
 
 Project to end of current billing cycle (end of month):
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end eom
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --billing-end eom
 ```
 
 Project to a specific date (year inferred; next year if date already passed):
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end 3-31
-jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end 03-31
-jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end 2026-03-31
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --billing-end 3-31
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --billing-end 03-31
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --billing-end 2026-03-31
 ```
 
 Show only last 4 days plus projection to end of month:
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end eom --last-days 4
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --billing-end eom --last-days 4
 ```
 
 Project with custom overage pricing ($10 per 50 GB block):
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -r 7 -p 10 --overage-price 10.00 --overage-gb 50
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --project 10 --overage-price 10.00 --overage-gb 50
 ```
 
 Save results to a file:
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -o output.csv
+jumpingjerboa diff /path/to/astound.parquet --output output.csv
 ```
 
 ### View Summary
@@ -92,7 +92,7 @@ Rolling averages smooth out daily fluctuations to show trends. The tool uses Pol
 
 Example:
 ```bash
-jumpingjerboa diff data.parquet -r 7 -r 30
+jumpingjerboa diff data.parquet --rolling-avg 7 --rolling-avg 30
 ```
 
 This shows both 7-day and 30-day rolling averages, letting you see short-term and long-term trends.
@@ -109,18 +109,18 @@ Projection estimates future usage based on recent patterns:
 
 Two ways to specify the projection horizon (mutually exclusive):
 
-`-p DAYS` — project a fixed number of days forward:
+\`--project DAYS\` — project a fixed number of days forward:
 ```bash
-jumpingjerboa diff data.parquet -r 7 -p 10
+jumpingjerboa diff data.parquet --rolling-avg 7 --project 10
 ```
 
 `--billing-end DATE` — project to a specific end date, so the last row in the
 table is always your billing cycle end and you can see at a glance whether
 you'll be over quota:
 ```bash
-jumpingjerboa diff data.parquet -r 7 --billing-end eom       # end of current month
-jumpingjerboa diff data.parquet -r 7 --billing-end 3-31      # Mar 31, year inferred
-jumpingjerboa diff data.parquet -r 7 --billing-end 2026-03-31
+jumpingjerboa diff data.parquet --rolling-avg 7 --billing-end eom       # end of current month
+jumpingjerboa diff data.parquet --rolling-avg 7 --billing-end 3-31      # Mar 31, year inferred
+jumpingjerboa diff data.parquet --rolling-avg 7 --billing-end 2026-03-31
 ```
 
 Year inference for `MM-DD`: uses the current year, or next year if the date has already passed.
@@ -154,10 +154,10 @@ If you go even 1 MB over your quota, you pay for a full block.
 You can customize the pricing:
 ```bash
 # Example: $10 per 50 GB block
-jumpingjerboa diff data.parquet -p 10 --overage-price 10.00 --overage-gb 50
+jumpingjerboa diff data.parquet --project 10 --overage-price 10.00 --overage-gb 50
 
 # Example: $5 per 10 GB block
-jumpingjerboa diff data.parquet -p 10 --overage-price 5.00 --overage-gb 10
+jumpingjerboa diff data.parquet --project 10 --overage-price 5.00 --overage-gb 10
 ```
 
 The tool will:
