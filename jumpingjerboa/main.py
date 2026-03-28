@@ -589,7 +589,8 @@ Overage Pricing:
         metavar="DAYS",
         help="Add rolling average column for DAYS (can specify multiple times or comma-separated)",
     )
-    diff_parser.add_argument(
+    projection_group = diff_parser.add_mutually_exclusive_group()
+    projection_group.add_argument(
         "-p",
         "--project",
         type=int,
@@ -597,18 +598,18 @@ Overage Pricing:
         metavar="DAYS",
         help="Project usage DAYS into the future based on rolling average",
     )
+    projection_group.add_argument(
+        "--billing-end",
+        default=None,
+        metavar="DATE",
+        help="Project to end of billing cycle. Use 'eom', 'MM-DD' (year inferred), or YYYY-MM-DD",
+    )
     diff_parser.add_argument(
         "--last-days",
         type=int,
         default=None,
         metavar="N",
         help="Only display the last N days (all data still used for statistics)",
-    )
-    diff_parser.add_argument(
-        "--billing-end",
-        default=None,
-        metavar="DATE",
-        help="Project to end of billing cycle. Use 'eom', 'MM-DD' (year inferred), or YYYY-MM-DD",
     )
     diff_parser.add_argument(
         "--overage-price",
