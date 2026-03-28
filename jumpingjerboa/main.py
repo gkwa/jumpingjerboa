@@ -9,6 +9,21 @@ import datetime
 import math
 
 
+def parse_billing_end(value: str) -> datetime.date:
+    """Parse a user-friendly billing end date string to a concrete date.
+
+    Accepts:
+      'eom' or 'end-of-month' -> last day of the current month
+      'YYYY-MM-DD'            -> that exact date
+    """
+    lower = value.lower().replace("_", "-")
+    if lower in ("eom", "end-of-month"):
+        today = datetime.date.today()
+        first_next = (today.replace(day=1) + datetime.timedelta(days=32)).replace(day=1)
+        return first_next - datetime.timedelta(days=1)
+    return datetime.date.fromisoformat(value)
+
+
 def calculate_daily_diff(
     input_file: str,
     output_file: str = None,
@@ -18,6 +33,7 @@ def calculate_daily_diff(
     overage_price: float = 6.50,
     overage_gb: float = 25.0,
     last_days: int = None,
+    billing_end: datetime.date = None,
 ):
     """
     Calculate the daily usage difference from the dataset.
@@ -141,6 +157,13 @@ def calculate_daily_diff(
     # 3. For each future day, add the average to previous day's total
     # 4. Calculate overage and costs for projected days (using ceiling for blocks)
     # 5. Mark when we exceed the data cap
+    # Override project_days with days until billing_end if provided
+    if billing_end is not None:
+        last_date_check = daily_df.row(-1, named=True)["date"]
+        days_to_end = (billing_end - last_date_check).days
+        if days_to_end > 0:
+            project_days = days_to_end
+
     projected_df = None
     if project_days > 0:
         # Get the last row to start projection from
@@ -429,6 +452,10 @@ def cmd_diff(args):
             for val in r.split(","):
                 rolling_windows.append(int(val.strip()))
 
+    billing_end = None
+    if args.billing_end:
+        billing_end = parse_billing_end(args.billing_end)
+
     calculate_daily_diff(
         args.input,
         args.output,
@@ -438,6 +465,7 @@ def cmd_diff(args):
         args.overage_price,
         args.overage_gb,
         args.last_days,
+        billing_end,
     )
 
 
@@ -489,7 +517,11 @@ Rolling Averages:
 Projection:
   Use -p/--project to estimate future usage based on rolling averages:
     -p 10       Project 10 days into the future
-  
+
+  Use --billing-end to project to a specific date (e.g. end of billing cycle):
+    --billing-end eom           Project to end of current month
+    --billing-end 2026-03-31    Project to a specific date
+
   When projecting, the tool uses the most recent rolling average (if specified)
   or the overall average to estimate daily usage going forward. It will warn
   you if you're projected to exceed your data cap and show estimated costs.
@@ -562,6 +594,12 @@ Overage Pricing:
         default=None,
         metavar="N",
         help="Only display the last N days (all data still used for statistics)",
+    )
+    diff_parser.add_argument(
+        "--billing-end",
+        default=None,
+        metavar="DATE",
+        help="Project to end of billing cycle. Use 'eom' for end of current month, or YYYY-MM-DD for a specific date",
     )
     diff_parser.add_argument(
         "--overage-price",
