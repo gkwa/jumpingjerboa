@@ -32,9 +32,21 @@ Project 10 days into the future:
 jumpingjerboa diff /path/to/astound.parquet -r 7 -p 10
 ```
 
-Show only last 14 days plus projection:
+Project to end of current billing cycle (end of month):
 ```bash
-jumpingjerboa diff /path/to/astound.parquet -r 7 -p 10 --last-days 14
+jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end eom
+```
+
+Project to a specific date (year inferred; next year if date already passed):
+```bash
+jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end 3-31
+jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end 03-31
+jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end 2026-03-31
+```
+
+Show only last 4 days plus projection to end of month:
+```bash
+jumpingjerboa diff /path/to/astound.parquet -r 7 --billing-end eom --last-days 4
 ```
 
 Project with custom overage pricing ($10 per 50 GB block):
@@ -60,7 +72,7 @@ jumpingjerboa summary /path/to/astound.parquet
 - **Day of week display** - Shows Mon, Tue, Wed, etc. for each date
 - **Cap display** - Shows the data cap value (e.g., 400 GB) on each row
 - **Rolling averages** - Calculate moving averages over specified windows (e.g., 7-day, 14-day, 30-day)
-- **Usage projection** - Estimate future usage and predict when you'll hit your data cap
+- **Usage projection** - Estimate future usage by days (`-p`) or billing cycle end (`--billing-end eom`, `--billing-end 3-31`, `--billing-end YYYY-MM-DD`)
 - **Limited display** - Show only recent days while using all data for calculations
 - **Overage cost calculation** - Calculate costs when usage exceeds data cap (rounded up to blocks)
 - **Flexible pricing** - Customize overage pricing (default: $6.50 per 25 GB block)
@@ -90,17 +102,28 @@ This shows both 7-day and 30-day rolling averages, letting you see short-term an
 Projection estimates future usage based on recent patterns:
 
 1. Takes your most recent rolling average (or overall average if no rolling window specified)
-2. Creates future date records for the specified number of days
+2. Creates future date records up to the projected date
 3. For each future day, adds the average to the previous day's total
 4. Calculates overage amounts and costs when cap is exceeded
 5. Shows when you'll hit the cap and how much it will cost
 
-Example:
+Two ways to specify the projection horizon (mutually exclusive):
+
+`-p DAYS` — project a fixed number of days forward:
 ```bash
 jumpingjerboa diff data.parquet -r 7 -p 10
 ```
 
-This projects 10 days forward using your 7-day rolling average, warns you if you're on track to exceed your cap, and shows estimated overage costs.
+`--billing-end DATE` — project to a specific end date, so the last row in the
+table is always your billing cycle end and you can see at a glance whether
+you'll be over quota:
+```bash
+jumpingjerboa diff data.parquet -r 7 --billing-end eom       # end of current month
+jumpingjerboa diff data.parquet -r 7 --billing-end 3-31      # Mar 31, year inferred
+jumpingjerboa diff data.parquet -r 7 --billing-end 2026-03-31
+```
+
+Year inference for `MM-DD`: uses the current year, or next year if the date has already passed.
 
 ## Limiting Display
 
