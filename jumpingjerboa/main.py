@@ -14,6 +14,7 @@ def parse_billing_end(value: str) -> datetime.date:
 
     Accepts:
       'eom' or 'end-of-month' -> last day of the current month
+      'MM-DD'                 -> that month/day this year, or next year if already past
       'YYYY-MM-DD'            -> that exact date
     """
     lower = value.lower().replace("_", "-")
@@ -21,6 +22,13 @@ def parse_billing_end(value: str) -> datetime.date:
         today = datetime.date.today()
         first_next = (today.replace(day=1) + datetime.timedelta(days=32)).replace(day=1)
         return first_next - datetime.timedelta(days=1)
+    if len(value) <= 5:  # MM-DD or M-D
+        today = datetime.date.today()
+        month, day = (int(p) for p in value.split("-"))
+        candidate = today.replace(month=month, day=day)
+        if candidate < today:
+            candidate = candidate.replace(year=today.year + 1)
+        return candidate
     return datetime.date.fromisoformat(value)
 
 
@@ -520,6 +528,7 @@ Projection:
 
   Use --billing-end to project to a specific date (e.g. end of billing cycle):
     --billing-end eom           Project to end of current month
+    --billing-end 03-31         Project to Mar 31 (year inferred; next year if past)
     --billing-end 2026-03-31    Project to a specific date
 
   When projecting, the tool uses the most recent rolling average (if specified)
@@ -599,7 +608,7 @@ Overage Pricing:
         "--billing-end",
         default=None,
         metavar="DATE",
-        help="Project to end of billing cycle. Use 'eom' for end of current month, or YYYY-MM-DD for a specific date",
+        help="Project to end of billing cycle. Use 'eom', 'MM-DD' (year inferred), or YYYY-MM-DD",
     )
     diff_parser.add_argument(
         "--overage-price",
