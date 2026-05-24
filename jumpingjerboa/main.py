@@ -335,6 +335,24 @@ def calculate_daily_diff(
         print(f"  Projected usage in {project_days} days: {final_amount:.2f} GB")
         print(f"  Data cap: {data_cap} GB")
 
+        # Flat daily budget to finish the billing period exactly at the cap
+        budget_per_day = max(0.0, (data_cap - current_amount) / project_days)
+        if budget_per_day > 0:
+            print(
+                f"  🎯 To stay under cap: budget {budget_per_day:.2f} GB/day for the remaining {project_days} days"
+            )
+            over_budget = projection_avg - budget_per_day
+            if over_budget > 0:
+                print(
+                    f"     (you're currently pacing {projection_avg:.2f} GB/day — {over_budget:.2f} GB/day over budget)"
+                )
+            else:
+                print(
+                    f"     (you're currently pacing {projection_avg:.2f} GB/day — {abs(over_budget):.2f} GB/day under budget)"
+                )
+        else:
+            print(f"  🎯 No daily budget left: already at or over the {data_cap} GB cap")
+
         if final_amount > data_cap:
             overage = final_amount - data_cap
             blocks = math.ceil(overage / overage_gb)
