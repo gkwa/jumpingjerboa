@@ -21,6 +21,7 @@ def print_table(
     print(header)
     print("-" * len(header))
 
+    prev_cost = 0.0
     for row in display_df.iter_rows(named=True):
         if row["daily_usage"] is None:
             continue
@@ -31,7 +32,9 @@ def print_table(
             for w in rolling_windows:
                 line += f" {row[f'rolling_{w}d']:>8.2f} GB  "
         line += f" {row['total']:>4.0f} GB  {pct:>6.2f}%  "
-        cost_str = f"${row['overage_cost']:>6.2f}" if row["overage_cost"] > 0 else ""
+        cost = row["overage_cost"]
+        cost_str = f"${cost:>6.2f}" if cost > prev_cost else ""
+        prev_cost = cost
         line += f"{cost_str:<11}{marker}"
         print(line)
 
