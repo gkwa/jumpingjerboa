@@ -318,69 +318,87 @@ def calculate_daily_diff(
         f"\nOverage Pricing: ${overage_price:.2f} per {overage_gb:.0f} GB block (rounded up)"
     )
 
-    # Show projection summary if we projected
-    if projected_df is not None:
-        print("\n* = Projected (estimated future usage)")
-        last_projected = projected_df.row(-1, named=True)
-        final_amount = last_projected["amount"]
-        final_cost = last_projected["overage_cost"]
-        data_cap = last_projected["total"]
-
-        # Get current amount from the last actual data point
+    # Show overage summary when billing_end is provided (projected or actual)
+    if billing_end is not None or projected_df is not None:
         last_actual = daily_df.row(-1, named=True)
         current_amount = last_actual["amount"]
+        data_cap = last_actual["total"]
+        current_overage_cost = last_actual["overage_cost"]
 
-        print(f"\nProjection Summary (based on {projection_avg:.2f} GB/day average):")
-        print(f"  Current usage: {current_amount:.2f} GB")
-        print(f"  Projected usage in {project_days} days: {final_amount:.2f} GB")
-        print(f"  Data cap: {data_cap} GB")
+        if projected_df is not None:
+            print("\n* = Projected (estimated future usage)")
+            last_projected = projected_df.row(-1, named=True)
+            final_amount = last_projected["amount"]
+            final_cost = last_projected["overage_cost"]
 
-        # Flat daily budget to finish the billing period exactly at the cap
-        budget_per_day = max(0.0, (data_cap - current_amount) / project_days)
-        if budget_per_day > 0:
-            print(
-                f"  🎯 To stay under cap: budget {budget_per_day:.2f} GB/day for the remaining {project_days} days"
-            )
-            over_budget = projection_avg - budget_per_day
-            if over_budget > 0:
+            print(f"\nProjection Summary (based on {projection_avg:.2f} GB/day average):")
+            print(f"  Current usage: {current_amount:.2f} GB")
+            print(f"  Projected usage in {project_days} days: {final_amount:.2f} GB")
+            print(f"  Data cap: {data_cap} GB")
+
+            # Flat daily budget to finish the billing period exactly at the cap
+            budget_per_day = max(0.0, (data_cap - current_amount) / project_days)
+            if budget_per_day > 0:
                 print(
-                    f"     (you're currently pacing {projection_avg:.2f} GB/day — {over_budget:.2f} GB/day over budget)"
+                    f"  To stay under cap: budget {budget_per_day:.2f} GB/day for the remaining {project_days} days"
                 )
+                over_budget = projection_avg - budget_per_day
+                if over_budget > 0:
+                    print(
+                        f"     (you're currently pacing {projection_avg:.2f} GB/day -- {over_budget:.2f} GB/day over budget)"
+                    )
+                else:
+                    print(
+                        f"     (you're currently pacing {projection_avg:.2f} GB/day -- {abs(over_budget):.2f} GB/day under budget)"
+                    )
             else:
+                print(f"  No daily budget left: already at or over the {data_cap} GB cap")
+
+            if final_amount > data_cap:
+                overage = final_amount - data_cap
+                blocks = math.ceil(overage / overage_gb)
+                print(f"  WARNING: Projected to EXCEED cap by {overage:.2f} GB")
                 print(
-                    f"     (you're currently pacing {projection_avg:.2f} GB/day — {abs(over_budget):.2f} GB/day under budget)"
+                    f"  Overage blocks: {blocks} x {overage_gb:.0f} GB = {blocks * overage_gb:.0f} GB charged"
                 )
-        else:
-            print(f"  🎯 No daily budget left: already at or over the {data_cap} GB cap")
+                print(f"  Estimated overage cost: ${final_cost:.2f}")
 
-        if final_amount > data_cap:
-            overage = final_amount - data_cap
-            blocks = math.ceil(overage / overage_gb)
-            print(f"  ⚠️  WARNING: Projected to EXCEED cap by {overage:.2f} GB")
-            print(
-                f"  📦 Overage blocks: {blocks} × {overage_gb:.0f} GB = {blocks * overage_gb:.0f} GB charged"
-            )
-            print(f"  💰 Estimated overage cost: ${final_cost:.2f}")
-
-            # Find when we'll hit the cap
-            for i, row in enumerate(projected_df.iter_rows(named=True)):
-                if row["amount"] > data_cap:
-                    days_until_cap = i + 1
-                    cap_date = row["date"].strftime("%Y-%m-%d")
-                    cap_overage = row["overage_gb"]
-                    cap_blocks = math.ceil(cap_overage / overage_gb)
-                    cap_cost = row["overage_cost"]
-                    print(
-                        f"  📅 Estimated to hit cap on {cap_date} ({days_until_cap} days from now)"
-                    )
-                    print(
-                        f"     At that point: {cap_overage:.2f} GB over = {cap_blocks} blocks = ${cap_cost:.2f}"
-                    )
-                    break
+                # Find when we'll hit the cap
+                for i, row in enumerate(projected_df.iter_rows(named=True)):
+                    if row["amount"] > data_cap:
+                        days_until_cap = i + 1
+                        cap_date = row["date"].strftime("%Y-%m-%d")
+                        cap_overage = row["overage_gb"]
+                        cap_blocks = math.ceil(cap_overage / overage_gb)
+                        cap_cost = row["overage_cost"]
+                        print(
+                            f"  Estimated to hit cap on {cap_date} ({days_until_cap} days from now)"
+                        )
+                        print(
+                            f"     At that point: {cap_overage:.2f} GB over = {cap_blocks} blocks = ${cap_cost:.2f}"
+                        )
+                        break
+            else:
+                remaining = data_cap - final_amount
+                print(f"  Projected to stay under cap with {remaining:.2f} GB remaining")
+                print("  Estimated overage cost: $0.00")
         else:
-            remaining = data_cap - final_amount
-            print(f"  ✓ Projected to stay under cap with {remaining:.2f} GB remaining")
-            print("  💰 Estimated overage cost: $0.00")
+            # Billing period ended — show actual final status
+            print(f"\nBilling Period Summary (ended {billing_end.strftime('%Y-%m-%d')}):")
+            print(f"  Final usage: {current_amount:.2f} GB")
+            print(f"  Data cap: {data_cap:.0f} GB")
+            if current_amount > data_cap:
+                overage = current_amount - data_cap
+                blocks = math.ceil(overage / overage_gb)
+                print(f"  EXCEEDED cap by {overage:.2f} GB")
+                print(
+                    f"  Overage blocks: {blocks} x {overage_gb:.0f} GB = {blocks * overage_gb:.0f} GB charged"
+                )
+                print(f"  Overage cost: ${current_overage_cost:.2f}")
+            else:
+                remaining = data_cap - current_amount
+                print(f"  Stayed under cap with {remaining:.2f} GB remaining")
+                print("  Overage cost: $0.00")
 
     if show_stats:
         print("\n=== Statistics ===\n")
