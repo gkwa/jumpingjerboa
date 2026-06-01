@@ -95,6 +95,8 @@ def calculate_daily_diff(
     current_amount = last_actual["amount"]
     data_cap = last_actual["total"]
 
+    jdisplay.print_current_overage(current_amount, data_cap, last_actual["overage_cost"], overage_gb)
+
     if projected_df is not None:
         jdisplay.print_projection_summary(
             current_amount, data_cap, project_days, projection_avg, projected_df, overage_gb

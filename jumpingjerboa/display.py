@@ -40,6 +40,19 @@ def print_table(
     print(f"\nOverage Pricing: ${overage_price:.2f} per {overage_gb:.0f} GB block (rounded up)")
 
 
+def print_current_overage(
+    current_amount: float,
+    data_cap: float,
+    overage_cost: float,
+    block_gb: float,
+) -> None:
+    if current_amount <= data_cap:
+        return
+    overage = current_amount - data_cap
+    blocks = math.ceil(overage / block_gb)
+    print(f"\nCurrent overage: {overage:.2f} GB ({blocks} block{'s' if blocks != 1 else ''}) = ${overage_cost:.2f}")
+
+
 def _print_cap_result(
     final_amount: float,
     data_cap: float,
