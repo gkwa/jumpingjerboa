@@ -76,6 +76,7 @@ jumpingjerboa summary /path/to/astound.parquet
 - **Limited display** - Show only recent days while using all data for calculations
 - **Overage cost calculation** - Calculate costs when usage exceeds data cap (rounded up to blocks)
 - **Flexible pricing** - Customize overage pricing (default: $6.50 per 25 GB block)
+- Target utilization - Flags a cycle projected to finish below --target-pct of the cap, with the daily pace that would spend the rest
 - **Month reset handling** - Automatically detects when usage counter goes back to 0
 - **Smart sampling** - Takes the most recent scrape for each day (most accurate)
 - **Statistics** - View daily, monthly, and overall usage patterns
@@ -140,6 +141,42 @@ This shows only the last 7 days in the output table. Important notes:
 - File exports (via `-o`) contain all data, not just the limited display
 
 This is useful when you have months of data but only want to see recent trends.
+
+## Target Utilization
+
+The cap is paid for whether or not it is used, so finishing a cycle far below it wastes money exactly as finishing above it does.
+
+A month spent away from home leaves hundreds of gigabytes unspent, and nothing in a purely overage-driven report calls that out.
+
+A cycle is on target when it lands between `--target-pct` of the cap and the cap itself, defaulting to 95 percent.
+
+Below that floor the summary reports the shortfall instead of congratulating you for staying under:
+
+```
+Projection Summary (based on 2.62 GB/day average):
+  Current usage: 7.86 GB
+  Projected usage in 17 days: 52.40 GB
+  Data cap: 400 GB
+  Target: finish between 380.00 GB and 400 GB (95% of cap or better)
+  Pace to land there: 21.89 - 23.07 GB/day for the remaining 17 days
+     (pacing 2.62 GB/day -- 19.27 GB/day below the band)
+  UNDER TARGET: finishing at 52.40 GB, 13.10% of the 400 GB cap
+  Leaving 347.60 GB of paid allowance unused, against a 380.00 GB target
+  At 2.62 GB/day the cap is 150 days off, on 2027-02-10
+  Cost: $0.00
+```
+
+The pace band is the actionable part.
+
+Its lower bound is the daily rate that reaches the target floor by the end of the cycle, and its upper bound is the rate that lands exactly on the cap.
+
+Any pace inside the band spends the allowance without buying an overage block.
+
+Set `--target-pct 0` to restore the old behaviour, where only exceeding the cap is worth reporting:
+
+```bash
+jumpingjerboa diff /path/to/astound.parquet --rolling-avg 7 --billing-end eom --target-pct 0
+```
 
 ## Overage Pricing
 

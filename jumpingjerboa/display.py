@@ -1,4 +1,3 @@
-import datetime
 import math
 
 import polars as pl
@@ -54,76 +53,6 @@ def print_current_overage(
     overage = current_amount - data_cap
     blocks = math.ceil(overage / block_gb)
     print(f"\nCurrent overage: {overage:.2f} GB ({blocks} block{'s' if blocks != 1 else ''}) = ${overage_cost:.2f}")
-
-
-def _print_cap_result(
-    final_amount: float,
-    data_cap: float,
-    final_cost: float,
-    block_gb: float,
-    projected_df: pl.DataFrame | None,
-) -> None:
-    if final_amount > data_cap:
-        overage = final_amount - data_cap
-        blocks = math.ceil(overage / block_gb)
-        print(f"  EXCEEDED cap by {overage:.2f} GB")
-        print(f"  Overage blocks: {blocks} x {block_gb:.0f} GB = {blocks * block_gb:.0f} GB charged")
-        print(f"  Cost: ${final_cost:.2f}")
-        if projected_df is not None:
-            for i, row in enumerate(projected_df.iter_rows(named=True)):
-                if row["amount"] > data_cap:
-                    ov = row["overage_gb"]
-                    blks = math.ceil(ov / block_gb)
-                    print(f"  Estimated to hit cap on {row['date'].strftime('%Y-%m-%d')} ({i + 1} days from now)")
-                    print(f"     At that point: {ov:.2f} GB over = {blks} blocks = ${row['overage_cost']:.2f}")
-                    break
-    else:
-        remaining = data_cap - final_amount
-        print(f"  Stayed under cap with {remaining:.2f} GB remaining")
-        print("  Cost: $0.00")
-
-
-def print_projection_summary(
-    current_amount: float,
-    data_cap: float,
-    project_days: int,
-    projection_avg: float,
-    projected_df: pl.DataFrame,
-    block_gb: float,
-) -> None:
-    last = projected_df.row(-1, named=True)
-    final_amount = last["amount"]
-    final_cost = last["overage_cost"]
-
-    print("\n* = Projected (estimated future usage)")
-    print(f"\nProjection Summary (based on {projection_avg:.2f} GB/day average):")
-    print(f"  Current usage: {current_amount:.2f} GB")
-    print(f"  Projected usage in {project_days} days: {final_amount:.2f} GB")
-    print(f"  Data cap: {data_cap:.0f} GB")
-
-    budget = max(0.0, (data_cap - current_amount) / project_days)
-    if budget > 0:
-        diff = projection_avg - budget
-        direction = "over" if diff > 0 else "under"
-        print(f"  To stay under cap: budget {budget:.2f} GB/day for the remaining {project_days} days")
-        print(f"     (pacing {projection_avg:.2f} GB/day -- {abs(diff):.2f} GB/day {direction} budget)")
-    else:
-        print(f"  No daily budget left: already at or over the {data_cap:.0f} GB cap")
-
-    _print_cap_result(final_amount, data_cap, final_cost, block_gb, projected_df)
-
-
-def print_billing_period_summary(
-    current_amount: float,
-    data_cap: float,
-    billing_end: datetime.date,
-    final_cost: float,
-    block_gb: float,
-) -> None:
-    print(f"\nBilling Period Summary (ended {billing_end.strftime('%Y-%m-%d')}):")
-    print(f"  Final usage: {current_amount:.2f} GB")
-    print(f"  Data cap: {data_cap:.0f} GB")
-    _print_cap_result(current_amount, data_cap, final_cost, block_gb, None)
 
 
 def print_stats(daily_df: pl.DataFrame, rolling_windows: list[int] | None) -> None:
